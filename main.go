@@ -23,6 +23,8 @@ type helloWorldResponse struct {
 	Message string `json:"message"`
 }
 
+type validationContextKey string
+
 var request helloWorldRequest
 var response = helloWorldResponse{Message: message}
 
@@ -55,6 +57,8 @@ func (v *validationHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("{\"error\": %v }", fmt.Sprintf("\"%v\"", http.StatusText(http.StatusBadRequest))), http.StatusBadRequest)
 		return
 	}
+	ctx := context.WithValue(r.Context(), validationContextKey("name"), request.Name)
+	r = r.WithContext(ctx)
 	v.next.ServeHTTP(w, r)
 }
 
@@ -66,8 +70,9 @@ func newHelloWorldHandler() *helloWorldHandler {
 }
 
 func (h *helloWorldHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	name := r.Context().Value(validationContextKey("name")).(string)
 	encoder := json.NewEncoder(w)
-	response = helloWorldResponse{Message: fmt.Sprintf("%v %v", message, request.Name)}
+	response = helloWorldResponse{Message: fmt.Sprintf("%v %v", message, name)}
 	err := encoder.Encode(&response)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("{\"error\": %v }", fmt.Sprintf("\"%v\"", http.StatusText(http.StatusInternalServerError))), http.StatusInternalServerError)
