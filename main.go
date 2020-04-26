@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 const (
@@ -93,4 +95,21 @@ func helloWorldUnMarshalHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("{\"error\": %v }", fmt.Sprintf("\"%v\"", http.StatusText(http.StatusInternalServerError))), http.StatusInternalServerError)
 	}
+}
+
+func fetchGoogle() {
+	r, err := http.NewRequest(http.MethodGet, "https://google.com", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Millisecond)
+	defer cancel()
+
+	r = r.WithContext(ctx)
+
+	response, err := http.DefaultClient.Do(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(response.Status)
 }
